@@ -1,0 +1,42 @@
+# System files
+.DS_Store
+Thumbs.db
+*.log
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# CodeIgniter specific
+application/logs/*
+!application/logs/.htaccess
+application/cache/*
+!application/cache/.htaccess
+
+# Configuration files with sensitive data
+application/config/database.php
+application/config/config.php
+
+# User uploads (opcional - descomente se não quiser versionar uploads)
+# uploads/*
+# !uploads/.htaccess
+
+# Backups
+backups/*
+!backups/.htaccess
+
+# Composer
+vendor/
+composer.lock
+
+# Environment files
+.env
+.env.*
+
+# Temporary files
+*.tmp
+*.temp
+
