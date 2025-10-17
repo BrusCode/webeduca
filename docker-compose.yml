@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  academy-db:
+    image: mysql:8.0
+    container_name: academy-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password_change_me
+      MYSQL_DATABASE: academy_lms
+      MYSQL_USER: academy_user
+      MYSQL_PASSWORD: academy_pass_change_me
+    volumes:
+      - academy_db_data:/var/lib/mysql
+      - ./uploads/install.sql:/docker-entrypoint-initdb.d/install.sql
+    ports:
+      - "3306:3306"
+    networks:
+      - academy-network
+
+  academy-app:
+    build:
+      context: .
+      dockerfile: Dockerfile.academy
+    container_name: academy-lms
+    restart: unless-stopped
+    depends_on:
+      - academy-db
+    environment:
+      DB_HOST: academy-db
+      DB_NAME: academy_lms
+      DB_USER: academy_user
+      DB_PASS: academy_pass_change_me
+    volumes:
+      - ./uploads:/var/www/html/uploads
+      - ./backups:/var/www/html/backups
+    ports:
+      - "8080:80"
+    networks:
+      - academy-network
+
+volumes:
+  academy_db_data:
+
+networks:
+  academy-network:
+    driver: bridge
+
