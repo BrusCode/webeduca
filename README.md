@@ -40,7 +40,23 @@ Academy-LMS/
 
 ## Instalação
 
-### Método 1: Instalação Web (Padrão)
+Este repositório oferece **três métodos de instalação** para atender diferentes necessidades e níveis de experiência:
+
+### Método 1: Instalação via EasyPanel (Recomendado para Produção)
+
+Ideal para equipes que buscam agilidade e facilidade de gerenciamento. O EasyPanel automatiza o deploy, configuração de SSL e escalabilidade.
+
+📘 **[Tutorial Completo: EASYPANEL_INSTALLATION.md](EASYPANEL_INSTALLATION.md)**
+
+📗 **[Configurações Avançadas: EASYPANEL_ADVANCED.md](EASYPANEL_ADVANCED.md)**
+
+### Método 2: Instalação em VPS Ubuntu Dedicada
+
+Para administradores experientes que desejam controle total sobre o ambiente. Configuração manual do stack LAMP (Linux, Apache, MySQL, PHP).
+
+📕 **[Tutorial Completo: VPS_INSTALLATION.md](VPS_INSTALLATION.md)**
+
+### Método 3: Instalação Web (Padrão do Produto)
 
 1. Faça upload dos arquivos para seu servidor
 2. Crie um banco de dados MySQL
@@ -49,9 +65,25 @@ Academy-LMS/
 5. Insira as credenciais do banco de dados
 6. Configure o administrador do sistema
 
-### Método 2: Instalação via EasyPanel
+---
 
-Consulte o arquivo `EASYPANEL_INSTALLATION.md` para instruções detalhadas de instalação usando EasyPanel.
+## Comparação entre Métodos de Instalação
+
+Não sabe qual método escolher? Consulte nosso relatório comparativo detalhado:
+
+📊 **[Relatório Comparativo: COMPARISON_REPORT.md](COMPARISON_REPORT.md)**
+
+O relatório analisa vantagens, desvantagens, escalabilidade e desempenho de cada abordagem.
+
+---
+
+## Guia Rápido de Referência
+
+Para comandos úteis, troubleshooting e checklist de deploy:
+
+📙 **[Guia Rápido: QUICK_REFERENCE.md](QUICK_REFERENCE.md)**
+
+---
 
 ## Configuração
 
