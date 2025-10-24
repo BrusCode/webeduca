@@ -17,7 +17,7 @@ application/cache/*
 !application/cache/.htaccess
 
 # Configuration files with sensitive data
-application/config/database.php
+# application/config/database.php - Agora usa variáveis de ambiente, seguro para versionar
 application/config/config.php
 
 # User uploads (opcional - descomente se não quiser versionar uploads)
