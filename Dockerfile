@@ -31,8 +31,7 @@ RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html \
     && chmod -R 777 /var/www/html/uploads \
     && chmod -R 777 /var/www/html/backups \
-    && chmod 666 /var/www/html/application/config/database.php \
-    && chmod 666 /var/www/html/application/config/routes.php
+    && chmod -R 775 /var/www/html/application/config
 
 # Configurar Apache para permitir .htaccess
 RUN echo '<Directory /var/www/html>' > /etc/apache2/conf-available/academy.conf \
