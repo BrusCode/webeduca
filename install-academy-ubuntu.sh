@@ -82,8 +82,11 @@ apt install -y mysql-server
 
 # Configurar senha do root do MySQL
 print_info "Configurando MySQL..."
-mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '$MYSQL_ROOT_PASSWORD';"
-mysql -e "FLUSH PRIVILEGES;"
+# No Ubuntu 24.04, o MySQL usa auth_socket por padrão para root
+sudo mysql <<MYSQL_ROOT_SETUP
+ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '$MYSQL_ROOT_PASSWORD';
+FLUSH PRIVILEGES;
+MYSQL_ROOT_SETUP
 
 # 5. Instalar PHP 8.1 e extensões
 print_info "Passo 5/10: Instalando PHP 8.1 e extensões..."
