@@ -168,6 +168,11 @@ fi
 
 # Ajustar permissões
 print_info "Ajustando permissões..."
+
+# Criar pastas necessárias se não existirem
+mkdir -p /var/www/academy_lms/uploads
+mkdir -p /var/www/academy_lms/backups
+
 chown -R www-data:www-data /var/www/academy_lms/
 chmod -R 755 /var/www/academy_lms/
 chmod -R 777 /var/www/academy_lms/uploads/
