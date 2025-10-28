@@ -62,6 +62,16 @@ fi
 print_info "Iniciando instalação..."
 echo ""
 
+# Detectar versão do Ubuntu e definir versão do PHP
+UBUNTU_VERSION=$(lsb_release -rs)
+if [[ "$UBUNTU_VERSION" == "24.04" ]]; then
+    PHP_VERSION="8.3"
+    print_info "Ubuntu 24.04 detectado. Usando PHP 8.3"
+else
+    PHP_VERSION="8.1"
+    print_info "Ubuntu 22.04 detectado. Usando PHP 8.1"
+fi
+
 # 1. Atualizar sistema
 print_info "Passo 1/10: Atualizando o sistema..."
 apt update && apt upgrade -y
@@ -88,9 +98,15 @@ ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '$MYSQL_R
 FLUSH PRIVILEGES;
 MYSQL_ROOT_SETUP
 
-# 5. Instalar PHP 8.1 e extensões
-print_info "Passo 5/10: Instalando PHP 8.1 e extensões..."
-apt install -y php8.1 php8.1-cli php8.1-mysql php8.1-gd php8.1-zip php8.1-curl php8.1-xml php8.1-mbstring
+# 5. Instalar PHP e extensões
+print_info "Passo 5/10: Instalando PHP $PHP_VERSION e extensões..."
+if [[ "$PHP_VERSION" == "8.3" ]]; then
+    # Ubuntu 24.04 - PHP 8.3 (padrão)
+    apt install -y php php-cli php-mysql php-gd php-zip php-curl php-xml php-mbstring libapache2-mod-php
+else
+    # Ubuntu 22.04 - PHP 8.1
+    apt install -y php8.1 php8.1-cli php8.1-mysql php8.1-gd php8.1-zip php8.1-curl php8.1-xml php8.1-mbstring libapache2-mod-php8.1
+fi
 
 # 6. Criar banco de dados
 print_info "Passo 6/10: Criando banco de dados..."
@@ -103,7 +119,7 @@ MYSQL_SCRIPT
 
 # 7. Configurar PHP
 print_info "Passo 7/10: Configurando PHP para produção..."
-cat > /etc/php/8.1/apache2/conf.d/99-academy.ini <<EOF
+cat > /etc/php/$PHP_VERSION/apache2/conf.d/99-academy.ini <<EOF
 ; Configurações de Produção para Academy LMS
 upload_max_filesize = 2048M
 post_max_size = 2148M
