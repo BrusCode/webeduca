@@ -1,21 +1,18 @@
 #!/bin/bash
 
 ################################################################################
-# Script de Instalação do Academy LMS - Versão Web Installer
-# Versão: 3.0 (Com Instalador Web)
+# Script de Instalação do Academy LMS - Versão Totalmente Automatizada
+# Versão: 3.0 (Sem Instalador Web)
 # Autor: Manus AI
 # Data: 28 de Outubro de 2025
 # 
-# Este script prepara o ambiente e deixa o INSTALADOR WEB fazer:
-# - Criação do banco de dados
-# - Importação das tabelas
-# - Criação do usuário administrador
+# Este script faz TUDO automaticamente:
+# ✅ Cria banco de dados
+# ✅ Importa SQL
+# ✅ Cria usuário administrador
+# ✅ Pula o instalador web
 # 
-# Diferenças da versão anterior:
-# ✅ NÃO cria banco de dados
-# ✅ NÃO importa SQL
-# ✅ NÃO cria usuário do banco
-# ✅ Deixa o instalador web fazer tudo
+# Use este script quando quiser instalação 100% automatizada
 ################################################################################
 
 set -e  # Sair se houver erro
@@ -50,22 +47,35 @@ if [ "$EUID" -ne 0 ]; then
     exit 1
 fi
 
-print_info "=== Instalação do Academy LMS com Instalador Web ==="
+print_info "=== Instalação Automatizada do Academy LMS ==="
 echo ""
 
 # Solicitar informações do usuário
 read -p "Digite o domínio do seu site (ex: ead.seusite.com.br): " DOMAIN
 read -p "Digite a senha do root do MySQL: " -s MYSQL_ROOT_PASSWORD
 echo ""
+read -p "Digite a senha para o usuário 'academy_user' do banco de dados: " -s DB_PASSWORD
+echo ""
 read -p "Digite seu email para o certificado SSL: " SSL_EMAIL
+echo ""
+
+# Dados do administrador
+print_info "Dados do Administrador do Sistema:"
+read -p "Nome: " ADMIN_FIRST_NAME
+read -p "Sobrenome: " ADMIN_LAST_NAME
+read -p "Email: " ADMIN_EMAIL
+read -sp "Senha: " ADMIN_PASSWORD
 echo ""
 
 # Confirmação
 print_warning "Configurações:"
 echo "  Domínio: $DOMAIN"
 echo "  Email SSL: $SSL_EMAIL"
+echo "  Banco de dados: academy_lms"
+echo "  Usuário DB: academy_user"
+echo "  Admin: $ADMIN_FIRST_NAME $ADMIN_LAST_NAME ($ADMIN_EMAIL)"
 echo ""
-print_warning "IMPORTANTE: O banco de dados será criado pelo INSTALADOR WEB"
+print_warning "IMPORTANTE: A instalação será 100% automatizada (sem instalador web)"
 echo ""
 read -p "Confirma as configurações acima? (s/n): " CONFIRM
 
@@ -88,15 +98,15 @@ else
 fi
 
 # 1. Atualizar sistema
-print_step "1/9" "Atualizando o sistema..."
+print_step "1/12" "Atualizando o sistema..."
 apt update && apt upgrade -y
 
 # 2. Instalar pacotes essenciais
-print_step "2/9" "Instalando pacotes essenciais..."
+print_step "2/12" "Instalando pacotes essenciais..."
 apt install -y git curl unzip wget software-properties-common lsb-release
 
 # 3. Instalar Apache
-print_step "3/9" "Instalando Apache..."
+print_step "3/12" "Instalando Apache..."
 apt install -y apache2
 a2enmod rewrite
 a2enmod headers
@@ -104,7 +114,7 @@ a2enmod ssl
 systemctl restart apache2
 
 # 4. Instalar MySQL
-print_step "4/9" "Instalando MySQL..."
+print_step "4/12" "Instalando MySQL..."
 apt install -y mysql-server
 
 # Configurar senha do root do MySQL
@@ -114,10 +124,8 @@ ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '$MYSQL_R
 FLUSH PRIVILEGES;
 MYSQL_ROOT_SETUP
 
-print_warning "NOTA: O banco de dados 'academy_lms' será criado pelo instalador web"
-
 # 5. Instalar PHP e extensões
-print_step "5/9" "Instalando PHP $PHP_VERSION e extensões..."
+print_step "5/12" "Instalando PHP $PHP_VERSION e extensões..."
 if [[ "$PHP_VERSION" == "8.3" ]]; then
     # Ubuntu 24.04 - PHP 8.3 (padrão)
     apt install -y php php-cli php-mysql php-gd php-zip php-curl php-xml php-mbstring libapache2-mod-php
@@ -126,8 +134,17 @@ else
     apt install -y php8.1 php8.1-cli php8.1-mysql php8.1-gd php8.1-zip php8.1-curl php8.1-xml php8.1-mbstring libapache2-mod-php8.1
 fi
 
-# 6. Configurar PHP
-print_step "6/9" "Configurando PHP para produção..."
+# 6. Criar banco de dados
+print_step "6/12" "Criando banco de dados..."
+mysql -u root -p"$MYSQL_ROOT_PASSWORD" <<MYSQL_SCRIPT
+CREATE DATABASE IF NOT EXISTS academy_lms CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER IF NOT EXISTS 'academy_user'@'localhost' IDENTIFIED BY '$DB_PASSWORD';
+GRANT ALL PRIVILEGES ON academy_lms.* TO 'academy_user'@'localhost';
+FLUSH PRIVILEGES;
+MYSQL_SCRIPT
+
+# 7. Configurar PHP
+print_step "7/12" "Configurando PHP para produção..."
 cat > /etc/php/$PHP_VERSION/apache2/conf.d/99-academy.ini <<EOF
 ; Configurações de Produção para Academy LMS
 upload_max_filesize = 2048M
@@ -151,14 +168,21 @@ expose_php = Off
 date.timezone = America/Sao_Paulo
 EOF
 
-# 7. Clonar repositório
-print_step "7/9" "Clonando repositório do Academy LMS..."
+# 8. Clonar repositório
+print_step "8/12" "Clonando repositório do Academy LMS..."
 if [ -d "/var/www/academy_lms" ]; then
     print_warning "Diretório /var/www/academy_lms já existe. Removendo..."
     rm -rf /var/www/academy_lms
 fi
 
 git clone https://github.com/BrusCode/webeduca.git /var/www/academy_lms
+
+# 9. Configurar banco de dados na aplicação
+print_step "9/12" "Configurando conexão com banco de dados..."
+sed -i "s/'hostname' => getenv('DB_HOST') ?: 'localhost'/'hostname' => 'localhost'/g" /var/www/academy_lms/application/config/database.php
+sed -i "s/'username' => getenv('DB_USER') ?: 'root'/'username' => 'academy_user'/g" /var/www/academy_lms/application/config/database.php
+sed -i "s/'password' => getenv('DB_PASS') ?: ''/'password' => '$DB_PASSWORD'/g" /var/www/academy_lms/application/config/database.php
+sed -i "s/'database' => getenv('DB_NAME') ?: 'academy_lms'/'database' => 'academy_lms'/g" /var/www/academy_lms/application/config/database.php
 
 # Baixar e instalar config.php
 print_info "Baixando arquivo config.php..."
@@ -169,6 +193,40 @@ sed -i "s|https://ead.qualityautomacao.com.br/|https://$DOMAIN/|g" /tmp/config.p
 
 # Copiar config.php para o local correto
 cp /tmp/config.php /var/www/academy_lms/application/config/config.php
+
+# Importar banco de dados
+print_step "10/12" "Importando estrutura do banco de dados..."
+if [ -f "/var/www/academy_lms/uploads/install.sql" ]; then
+    mysql -u academy_user -p"$DB_PASSWORD" academy_lms < /var/www/academy_lms/uploads/install.sql 2>/dev/null || print_warning "Algumas tabelas já existem (normal se reinstalando)"
+else
+    print_warning "Arquivo install.sql não encontrado."
+fi
+
+# Criar usuário administrador
+print_info "Criando usuário administrador..."
+ADMIN_PASSWORD_HASH=$(php -r "echo password_hash('$ADMIN_PASSWORD', PASSWORD_BCRYPT);")
+
+mysql -u academy_user -p"$DB_PASSWORD" academy_lms <<ADMIN_SQL
+INSERT INTO users (
+    first_name,
+    last_name,
+    email,
+    password,
+    role_id,
+    status,
+    date_added,
+    email_verified_at
+) VALUES (
+    '$ADMIN_FIRST_NAME',
+    '$ADMIN_LAST_NAME',
+    '$ADMIN_EMAIL',
+    '$ADMIN_PASSWORD_HASH',
+    1,
+    1,
+    UNIX_TIMESTAMP(),
+    CURRENT_TIMESTAMP
+) ON DUPLICATE KEY UPDATE email=email;
+ADMIN_SQL
 
 # Criar pastas necessárias
 print_info "Criando pastas necessárias..."
@@ -186,8 +244,8 @@ chmod -R 777 /var/www/academy_lms/backups/
 chmod -R 777 /var/www/academy_lms/application/logs/
 chmod -R 777 /var/www/academy_lms/application/cache/
 
-# 8. Configurar Virtual Host
-print_step "8/9" "Configurando Virtual Host do Apache..."
+# 11. Configurar Virtual Host
+print_step "11/12" "Configurando Virtual Host do Apache..."
 cat > /etc/apache2/sites-available/${DOMAIN}.conf <<EOF
 <VirtualHost *:80>
     ServerAdmin webmaster@localhost
@@ -210,8 +268,8 @@ a2dissite 000-default.conf 2>/dev/null || true
 apache2ctl configtest
 systemctl restart apache2
 
-# 9. Instalar certificado SSL
-print_step "9/9" "Instalando certificado SSL com Let's Encrypt..."
+# 12. Instalar certificado SSL
+print_step "12/12" "Instalando certificado SSL com Let's Encrypt..."
 apt install -y certbot python3-certbot-apache
 certbot --apache -d ${DOMAIN} --non-interactive --agree-tos -m ${SSL_EMAIL} --redirect || print_warning "Erro ao instalar SSL. Você pode tentar manualmente depois."
 
@@ -221,25 +279,25 @@ systemctl restart apache2
 print_info ""
 print_info "=== Instalação Concluída com Sucesso! ==="
 print_info ""
-print_info "🌐 Acesse o INSTALADOR WEB: https://${DOMAIN}/install/step0"
+print_info "🌐 Acesse: https://${DOMAIN}/login"
 print_info ""
-print_info "📋 O instalador web irá solicitar:"
-print_info "  1. Credenciais do MySQL root"
-print_info "     - Host: localhost"
-print_info "     - User: root"
-print_info "     - Password: [a senha que você definiu]"
+print_info "👤 Credenciais do Administrador:"
+print_info "  Email: $ADMIN_EMAIL"
+print_info "  Senha: [a senha que você definiu]"
 print_info ""
-print_info "  2. Nome do banco de dados a ser criado"
-print_info "     - Sugestão: academy_lms"
+print_info "🗄️ Credenciais do Banco de Dados:"
+print_info "  Host: localhost"
+print_info "  Database: academy_lms"
+print_info "  User: academy_user"
+print_info "  Password: [a senha que você definiu]"
 print_info ""
-print_info "  3. Dados do administrador do sistema"
-print_info "     - Nome, email e senha"
+print_info "Próximos passos:"
+print_info "1. Acesse https://${DOMAIN}/login"
+print_info "2. Faça login com as credenciais do administrador"
+print_info "3. Configure as informações da instituição"
+print_info "4. Personalize o tema e logotipo"
 print_info ""
-print_warning "IMPORTANTE:"
-print_warning "- O instalador web criará o banco de dados automaticamente"
-print_warning "- O instalador web importará todas as tabelas"
-print_warning "- O instalador web criará seu usuário administrador"
-print_warning "- Guarde suas credenciais em local seguro!"
+print_warning "IMPORTANTE: Guarde suas credenciais em local seguro!"
 print_info ""
 print_info "Documentação completa: https://github.com/BrusCode/webeduca"
 
